@@ -1,9 +1,4 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php?error=' . urlencode('Please login first'));
-    exit;
-}
 // login_action.php
 session_start();
 include 'db.php';
@@ -26,11 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: list.php');
             exit;
         } else {
-            header('Location: login.php?error=' . urlencode('Invalid password'));
+            header('Location: login.php?error=' . urlencode('Invalid username or password, try login again'));
             exit;
         }
     } else {
-        header('Location: login.php?error=' . urlencode('No user with that matric'));
+        header('Location: login.php?error=' . urlencode('Invalid username or password, try login again'));
         exit;
     }
 }

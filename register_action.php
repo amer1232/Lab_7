@@ -1,40 +1,67 @@
 <?php
 // register_action.php
 include 'db.php';
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php?error=' . urlencode('Please login first'));
-    exit;
-}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $matric = trim($_POST['matric']);
     $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
     $password = $_POST['password'];
     $accessLevel = $_POST['accessLevel'];
 
     // basic validation
     if (empty($matric) || empty($name) || empty($password)) {
-        die('Required fields missing.');
+        showMessage('error', 'Required fields missing.', 'register.php');
+        exit;
     }
 
     // hash password
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // insert
-    $stmt = $conn->prepare("INSERT INTO users (matric,name,email,password,accessLevel) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $matric, $name, $email, $hash, $accessLevel);
+    // insert (without email)
+    $stmt = $conn->prepare("INSERT INTO users (matric, name, password, accessLevel) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $matric, $name, $hash, $accessLevel);
     if ($stmt->execute()) {
-        echo "Registered successfully. <a href='login.php'>Go to login</a>";
+        showMessage('success', 'Registration successful! You can now login.', 'login.php');
     } else {
         // handle duplicate key
         if ($conn->errno === 1062) {
-            echo "Matric already exists. Try a different matric.";
+            showMessage('error', 'Matric already exists. Try a different matric.', 'register.php');
         } else {
-            echo "Error: " . $conn->error;
+            showMessage('error', 'Error: ' . $conn->error, 'register.php');
         }
     }
     $stmt->close();
 }
 $conn->close();
+
+function showMessage($type, $message, $redirectUrl) {
+?>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= $type === 'success' ? 'Success' : 'Error' ?> | Lab 7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo"><?= $type === 'success' ? '✅' : '❌' ?></div>
+      <h2><?= $type === 'success' ? 'Success!' : 'Oops!' ?></h2>
+      <div class="<?= $type ?>-message" style="margin: 20px 0;">
+        <?= htmlspecialchars($message) ?>
+      </div>
+      <a href="<?= $redirectUrl ?>" class="btn <?= $type === 'success' ? 'btn-success' : 'btn-secondary' ?>" style="width: 100%;">
+        <?= $type === 'success' ? 'Go to Login' : 'Try Again' ?>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+<?php
+}
 ?>
